@@ -1,0 +1,8 @@
+# Giảm kích thước build context (Dockerfile COPY . . từ thư mục gốc)
+**/target/
+**/.git/
+**/.idea/
+**/*.iml
+**/node_modules/
+*.md
+docs/

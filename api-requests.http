@@ -1,0 +1,57 @@
+### ShopMicro - Bộ request mẫu (dùng với REST Client của VS Code hoặc IntelliJ)
+### Mọi request đi qua API Gateway: http://localhost:8080
+
+@gateway = http://localhost:8080
+
+### 1) Đăng ký tài khoản
+POST {{gateway}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "demo@shopmicro.com",
+  "password": "123456",
+  "fullName": "Nguyen Van A"
+}
+
+### 2) Đăng nhập -> lấy accessToken (copy vào biến @token bên dưới)
+POST {{gateway}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@shopmicro.com",
+  "password": "123456"
+}
+
+### Dán token lấy được vào đây:
+@token = PASTE_ACCESS_TOKEN_HERE
+
+### 3) Xem hồ sơ của tôi (cần token — minh hoạ Gateway gắn header X-User-*)
+GET {{gateway}}/api/users/me
+Authorization: Bearer {{token}}
+
+### 4) Xem danh sách sản phẩm (CÔNG KHAI - không cần token)
+GET {{gateway}}/api/products
+
+### 5) Đặt hàng THÀNH CÔNG (dùng productId còn hàng lấy từ bước 4)
+POST {{gateway}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "PASTE_PRODUCT_ID_CON_HANG",
+  "quantity": 1
+}
+
+### 6) Đặt hàng THẤT BẠI (sản phẩm "Tai nghe Sony" có stock=0 -> Saga huỷ + hoàn tiền)
+POST {{gateway}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "PASTE_PRODUCT_ID_HET_HANG",
+  "quantity": 1
+}
+
+### 7) Xem các đơn của tôi (theo dõi trạng thái PENDING -> CONFIRMED/CANCELLED)
+GET {{gateway}}/api/orders
+Authorization: Bearer {{token}}

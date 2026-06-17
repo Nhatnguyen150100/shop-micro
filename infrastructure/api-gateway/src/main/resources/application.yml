@@ -1,0 +1,72 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    # Lấy cấu hình chung từ config-server (optional: không có vẫn chạy được)
+    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cloud:
+    gateway:
+      # Tự sinh route theo tên service trong Eureka (lowercase) — tiện cho dev
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      # Định nghĩa route TƯỜNG MINH (rõ ràng, kiểm soát tốt hơn)
+      routes:
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            # Giới hạn tốc độ cho nhóm auth (chống brute-force) bằng Redis
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 5     # 5 request/giây
+                redis-rate-limiter.burstCapacity: 10    # cho phép dồn tối đa 10
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/users/**
+        - id: product-service
+          uri: lb://PRODUCT-SERVICE
+          predicates:
+            - Path=/api/products/**
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/orders/**
+        - id: payment-service
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/api/payments/**
+
+# Khoá bí mật JWT — PHẢI trùng với khoá ký token bên auth-service
+jwt:
+  secret: ${JWT_SECRET:U2hvcE1pY3JvU3VwZXJTZWNyZXRLZXlGb3JKV1RIUzI1NkFsZ29yaXRobTEyMzQ1Njc4OTA=}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTLP_ENDPOINT:http://localhost:4318/v1/traces}
