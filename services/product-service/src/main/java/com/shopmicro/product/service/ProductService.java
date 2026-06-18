@@ -57,4 +57,16 @@ public class ProductService {
         productId, quantity, product.getStock());
     return true;
   }
+
+  /**
+   * Hoàn kho (hành động BÙ TRỪ cho reserveStock khi saga bị huỷ ở bước sau).
+   */
+  @Transactional
+  public void releaseStock(UUID productId, int quantity) {
+    repository.findById(productId).ifPresent(product -> {
+      product.setStock(product.getStock() + quantity);
+      repository.save(product);
+      log.info("Hoàn kho: sản phẩm {} +{} (còn {})", productId, quantity, product.getStock());
+    });
+  }
 }

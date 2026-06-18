@@ -4,6 +4,7 @@ import com.shopmicro.common.event.EventTopics;
 import com.shopmicro.common.event.OrderCreatedEvent;
 import com.shopmicro.common.exception.BadRequestException;
 import com.shopmicro.common.exception.ResourceNotFoundException;
+import com.shopmicro.common.outbox.OutboxPublisher;
 import com.shopmicro.order.client.ProductClient;
 import com.shopmicro.order.dto.CreateOrderRequest;
 import com.shopmicro.order.dto.ProductDto;
@@ -12,7 +13,6 @@ import com.shopmicro.order.enums.EOrderStatus;
 import com.shopmicro.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +27,7 @@ public class OrderService {
 
   private final OrderRepository orderRepository;
   private final ProductClient productClient;
-  private final KafkaTemplate<String, Object> kafkaTemplate;
+  private final OutboxPublisher outboxPublisher;
 
   /**
    * BƯỚC 0 của Saga:
@@ -56,11 +56,13 @@ public class OrderService {
         .status(EOrderStatus.PENDING)
         .build());
 
+    // Ghi event vào OUTBOX trong cùng transaction với việc lưu đơn (tránh dual-write).
+    // OutboxRelay sẽ publish "order.created" lên Kafka sau khi transaction commit.
     OrderCreatedEvent event = new OrderCreatedEvent(
         order.getId(), userId, email, req.productId(), req.quantity(), amount);
-    kafkaTemplate.send(EventTopics.ORDER_CREATED, order.getId().toString(), event);
+    outboxPublisher.publish(EventTopics.ORDER_CREATED, order.getId().toString(), event);
 
-    log.info("Tạo đơn {} (PENDING) và phát order.created", order.getId());
+    log.info("Tạo đơn {} (PENDING) và ghi order.created vào outbox", order.getId());
     return order;
   }
 

@@ -16,9 +16,10 @@ Một hệ thống **microservices hoàn chỉnh** xây dựng bằng **Spring B
 | **auth-service** | 8081 | Đăng ký, đăng nhập, cấp JWT |
 | **user-service** | 8082 | Hồ sơ người dùng |
 | **product-service** | 8083 | Catalog + tồn kho (Kafka) |
-| **order-service** | 8084 | Đặt hàng + điều phối **Saga** (Feign + Kafka) |
-| **payment-service** | 8085 | Thanh toán + hoàn tiền (Kafka) |
+| **order-service** | 8084 | Đặt hàng; tham gia Saga (nhận lệnh confirm/cancel) |
+| **payment-service** | 8085 | Thanh toán + hoàn tiền (Kafka command/reply) |
 | **notification-service** | 8086 | Gửi email khi đơn hoàn tất/huỷ (Kafka) |
+| **saga-orchestrator-service** | 8087 | **Nhạc trưởng** điều phối Saga đặt hàng (orchestration) |
 | **common-lib** | — | Thư viện dùng chung (response, exception, event) |
 
 **Hạ tầng:** PostgreSQL (mỗi service 1 DB), Redis, Apache Kafka, Jaeger (tracing), Prometheus + Grafana (metrics).

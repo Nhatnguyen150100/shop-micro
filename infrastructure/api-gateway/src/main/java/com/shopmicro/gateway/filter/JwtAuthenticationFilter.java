@@ -1,6 +1,5 @@
 package com.shopmicro.gateway.filter;
 
-import com.shopmicro.common.security.AuthHeaders;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -40,6 +39,16 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
   @Value("${jwt.secret}")
   private String secret;
 
+  /**
+   * Tên các header định danh user mà Gateway gắn vào request sau khi verify JWT,
+   * rồi chuyển tiếp xuống service nội bộ. Phải KHỚP với hằng số AuthHeaders trong
+   * common-lib (inline ở đây để gateway reactive không phải kéo dependency
+   * servlet/JPA của common-lib).
+   */
+  private static final String HDR_USER_ID = "X-User-Id";
+  private static final String HDR_USER_EMAIL = "X-User-Email";
+  private static final String HDR_USER_ROLE = "X-User-Role";
+
   /** Các tiền tố đường dẫn KHÔNG cần đăng nhập. */
   private static final List<String> PUBLIC_PREFIXES = List.of(
       "/api/auth",
@@ -71,9 +80,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
       // Gắn thông tin user đã xác thực vào header để truyền xuống service nội bộ
       ServerHttpRequest mutated = request.mutate()
-          .header(AuthHeaders.USER_ID, String.valueOf(claims.get("id")))
-          .header(AuthHeaders.USER_EMAIL, claims.getSubject())
-          .header(AuthHeaders.USER_ROLE, String.valueOf(claims.get("role")))
+          .header(HDR_USER_ID, String.valueOf(claims.get("id")))
+          .header(HDR_USER_EMAIL, claims.getSubject())
+          .header(HDR_USER_ROLE, String.valueOf(claims.get("role")))
           .build();
 
       return chain.filter(exchange.mutate().request(mutated).build());

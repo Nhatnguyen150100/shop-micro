@@ -193,6 +193,20 @@ services:
       discovery-server:
         condition: service_healthy
 
+  saga-orchestrator-service:
+    build:
+      context: .
+      dockerfile: services/saga-orchestrator-service/Dockerfile
+    container_name: sm-saga-orchestrator
+    environment: *common-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+
   notification-service:
     build:
       context: .
